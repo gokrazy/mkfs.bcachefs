@@ -1,4 +1,4 @@
-module github.com/gokrazy/mkfs
+module github.com/gokrazy/mkfs.bcachefs
 
 go 1.17
 

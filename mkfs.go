@@ -35,24 +35,37 @@ func makeFilesystemNotWar() error {
 	// /perm is not a mounted file system. Try to create a file system.
 	dev := rootdev.Partition(rootdev.Perm)
 	log.Printf("No /perm mountpoint found. Creating file system on %s", dev)
-	tmp, err := os.MkdirTemp("", "gokrazy-mkfs-")
+	tmp, err := os.MkdirTemp("", "gokrazy-bcachefs-")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmp)
 
-	log.Printf("Writing self-contained mke2fs to %s", tmp)
+	log.Printf("Writing self-contained bcachefs-tools to %s", tmp)
 
-	if err := ioutil.WriteFile(filepath.Join(tmp, "mke2fs"), mke2fs, 0755); err != nil {
-		return err
+	// write each file from embedded dir
+	dirents, err := bcachefsEmbedded.ReadDir(bcachefsRoot)
+	for _, d := range dirents {
+		b, err := bcachefsEmbedded.ReadFile(filepath.Join(bcachefsRoot, d.Name()))
+		if err != nil {
+			return err
+		}
+		fn := filepath.Join(tmp, d.Name())
+		if err := os.WriteFile(fn, b, 755); err != nil {
+			return err
+		}
 	}
-	mkfs := exec.Command(filepath.Join(tmp, "mke2fs"), "-t", "ext4", dev)
+
+	// exec bcachefs format on rootdev partition
+	mkfs := exec.Command(filepath.Join(tmp, "ld-linux-aarch64.so.1"), filepath.Join(tmp, "bcachefs"), "format", dev)
+	mkfs.Env = append(os.Environ(), "LD_LIBRARY_PATH="+tmp)
 	mkfs.Stdout = os.Stdout
 	mkfs.Stderr = os.Stderr
-	log.Printf("%v", mkfs.Args)
+	log.Printf("exec bcachefs with args: %v", mkfs.Args)
 	if err := mkfs.Run(); err != nil {
 		return fmt.Errorf("%v: %v", mkfs.Args, err)
 	}
+	log.Printf("Success formatting rootdev perm partition!")
 
 	// It is pointless to try and mount the file system here from within this
 	// process, as gokrazy services are run in a separate mount namespace.
