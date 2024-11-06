@@ -57,7 +57,7 @@ func makeFilesystemNotWar() error {
 	}
 
 	// exec bcachefs format on rootdev partition
-	mkfs := exec.Command(filepath.Join(tmp, "ld-linux-aarch64.so.1"), filepath.Join(tmp, "bcachefs"), "format", dev)
+	mkfs := exec.Command(filepath.Join(tmp, "ld-linux-aarch64.so.1"), filepath.Join(tmp, "bcachefs"), "format", "--block_size=4096", dev)
 	mkfs.Env = append(os.Environ(), "LD_LIBRARY_PATH="+tmp)
 	mkfs.Stdout = os.Stdout
 	mkfs.Stderr = os.Stderr
