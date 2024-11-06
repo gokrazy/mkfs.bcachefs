@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -76,7 +75,7 @@ func makeFilesystemNotWar() error {
 		return fmt.Errorf("could read neither /perm/gokr-pw.txt, nor /etc/gokr-pw.txt, nor /gokr-pw.txt: %v", err)
 	}
 
-	port, err := ioutil.ReadFile("/etc/http-port.txt")
+	port, err := os.ReadFile("/etc/http-port.txt")
 	if err != nil {
 		return err
 	}
@@ -102,12 +101,12 @@ func makeFilesystemNotWar() error {
 //
 // TODO: de-duplicate this with gokrazy.go into a gokrazy/internal package
 func readConfigFile(fileName string) (string, error) {
-	str, err := ioutil.ReadFile("/perm/" + fileName)
+	str, err := os.ReadFile("/perm/" + fileName)
 	if err != nil {
-		str, err = ioutil.ReadFile("/etc/" + fileName)
+		str, err = os.ReadFile("/etc/" + fileName)
 	}
 	if err != nil && os.IsNotExist(err) {
-		str, err = ioutil.ReadFile("/" + fileName)
+		str, err = os.ReadFile("/" + fileName)
 	}
 
 	return strings.TrimSpace(string(str)), err
